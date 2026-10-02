@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: sirius
+
+      - uses: actions/checkout@v7
+        with:
+          path: sonolus.h
+          repository: 'SonolusHaniwa/sonolus.h'
+
+      - name: Preparing C/C++ Compiler
+        run: |
+          sudo apt update
+          sudo apt install g++ libjsoncpp-dev libzip-dev libpng-dev -y
+
+      - name: Building sonolus.h
+        working-directory: sonolus.h
+        run: g++ compiler/main.cpp -ocompiler/main -O3 -w
+
+      - name: Compiling engine
+        working-directory: sirius
+        run: |
+          mkdir -p .sonolus
+          ../sonolus.h/compiler/main main.cpp .sonolus
+
+      - name: Building play
+        working-directory: sirius
+        run: |
+          g++ .sonolus/main.cpp -omain -g -w -fpermissive -ljsoncpp -lz -lzip -lpng -Dplay
+          ./main
+
+      - name: Building watch
+        working-directory: sirius
+        run: |
+          g++ .sonolus/main.cpp -omain -g -w -fpermissive -ljsoncpp -lz -lzip -lpng -Dwatch
+          ./main
+
+      - name: Building preview
+        working-directory: sirius
+        run: |
+          g++ .sonolus/main.cpp -omain -g -w -fpermissive -ljsoncpp -lz -lzip -lpng -Dpreview
+          ./main
+
+      - name: Building tutorial
+        working-directory: sirius
+        run: |
+          g++ .sonolus/main.cpp -omain -g -w -fpermissive -ljsoncpp -lz -lzip -lpng -Dtutorial
+          ./main
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sirius
+          path: sirius/dist/Engine*
